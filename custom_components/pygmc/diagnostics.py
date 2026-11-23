@@ -10,6 +10,8 @@ from homeassistant.core import HomeAssistant
 
 from .coordinator import GMCConfigEntry
 
+# Serial number identifies one physical counter - keep it out of diagnostics people
+# paste into GitHub issues.
 TO_REDACT: Final = {"serial_number"}
 
 
@@ -21,6 +23,7 @@ async def async_get_config_entry_diagnostics(
     return async_redact_data(
         {
             "device": asdict(coordinator.identity),
+            # Calibration is the first thing to look at when "the dose rate is wrong"
             "calibration": coordinator.calibration,
             "data": coordinator.data,
             "last_update_success": coordinator.last_update_success,

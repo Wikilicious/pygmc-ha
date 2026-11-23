@@ -23,10 +23,11 @@ from .const import DOMAIN, MANUFACTURER
 from .coordinator import GMCConfigEntry, GMCCoordinator
 
 if TYPE_CHECKING:
-    # Added in Home Assistant 2025.3; annotations are never evaluated at runtime.
+    # Added in Home Assistant 2025.3. Annotations are never evaluated at runtime so
+    # older releases don't trip over the import.
     from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-# The coordinator does all I/O.
+# The coordinator does all the serial I/O. Entities just read coordinator.data.
 PARALLEL_UPDATES = 0
 
 SENSORS: Final = (
@@ -39,13 +40,14 @@ SENSORS: Final = (
     SensorEntityDescription(
         key="dose_rate",
         translation_key="dose_rate",
-        # Coded with U+03BC, the micro sign Home Assistant recommends over U+00B5.
+        # Greek small letter mu (U+03BC) - what Home Assistant recommends - NOT the
+        # micro sign (U+00B5). They look identical. Don't "fix" it.
         native_unit_of_measurement="μSv/h",
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=3,
     ),
     SensorEntityDescription(
-        # A one second count sampled once a minute is mostly noise.
+        # A one second count sampled once a minute is mostly noise. Off by default.
         key="cps",
         translation_key="cps",
         native_unit_of_measurement="CPS",
@@ -62,7 +64,9 @@ SENSORS: Final = (
         suggested_display_precision=1,
     ),
     SensorEntityDescription(
-        # pygmc notes the first readings are unreliable until the sensor settles.
+        # Temperamental (pun intended). See pygmc DeviceRFC1201.get_temp() notes:
+        # GMC-300S returned 0, then 86, then settled at room temperature.
+        # Off by default.
         key="temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -80,6 +84,7 @@ async def async_setup_entry(
 ) -> None:
     """Add a sensor for each reading the counter supports."""
     coordinator = entry.runtime_data
+    # coordinator.data only has keys the device supports (see gmc.OPTIONAL_READINGS)
     async_add_entities(
         GMCSensor(coordinator, description)
         for description in SENSORS
@@ -106,6 +111,7 @@ class GMCSensor(CoordinatorEntity[GMCCoordinator], SensorEntity):
             model=identity.model,
             name=identity.model,
             serial_number=identity.serial_number,
+            # Empty str when pygmc couldn't split the version. None hides it.
             sw_version=identity.firmware or None,
         )
 

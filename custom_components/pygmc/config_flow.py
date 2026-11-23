@@ -24,11 +24,18 @@ from .gmc import GMCError, GMCIdentity, NoResponseError, UnsupportedModelError, 
 
 
 def _hex_id(value: int | None) -> str | None:
+    # 6790 --> '1A86'
     return None if value is None else f"{value:04X}"
 
 
 def _list_ports(in_use: set[str]) -> list[SelectOptionDict]:
-    """List serial ports not used by an entry, likely GMC counters first."""
+    """
+    List serial ports not already used by an entry.
+
+    Likely GMC counters (CH340 vid/pid) first, then everything else.
+    Not filtering out the rest... a GMC behind some other adapter should still work.
+    """
+    # realpath - /dev/serial/by-id/... and /dev/ttyUSB0 can be the same port
     in_use_devices = {os.path.realpath(port) for port in in_use}
     options: list[SelectOptionDict] = []
     for port in sorted(
@@ -76,6 +83,8 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = err.translation_key
                 placeholders = err.translation_placeholders
             except Exception:
+                # Unsure of every exception pygmc/pyserial can throw. Log it, tell the
+                # user to check the logs, don't crash the flow.
                 LOGGER.exception("Unexpected error probing %s", user_input[CONF_PORT])
                 errors["base"] = "unknown"
             else:
@@ -90,10 +99,12 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @override
     async def async_step_usb(self, discovery_info: UsbServiceInfo) -> ConfigFlowResult:
-        """Handle a plugged in USB serial adapter of the kind GMC counters use.
+        """
+        Handle a plugged in USB serial adapter of the kind GMC counters use.
 
-        Nothing is sent to the port before the user confirms: the adapter's chip is
-        generic and the hardware behind it may not be a GMC counter.
+        Nothing is written to the port until the user confirms. The CH340 chip is
+        generic... the thing behind it may not be a GMC at all. Sending it GMC
+        commands uninvited is rude (and who knows what it does to an Arduino).
         """
         port = await self.hass.async_add_executor_job(
             usb.get_serial_by_id, discovery_info.device
@@ -102,8 +113,9 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
             _ports_match, port, self._configured_ports()
         ):
             return self.async_abort(reason="already_configured")
-        # Only the port is known until the counter is probed. If the user ignores
-        # this discovery, later discoveries on the same port are ignored too.
+        # Only the port is known until the counter is probed - no serial number yet.
+        # Side effect: if the user ignores this discovery, later discoveries on the
+        # same port are ignored too.
         await self.async_set_unique_id(
             f"{discovery_info.vid}:{discovery_info.pid}_{port}"
         )
@@ -122,6 +134,7 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 identity = await self._async_probe(self._discovered_port)
             except NoResponseError:
+                # Not a GMC. Some other CH340 gadget.
                 return self.async_abort(
                     reason="not_gmc_device", description_placeholders=placeholders
                 )
@@ -155,8 +168,9 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
         placeholders: dict[str, str] = {}
         if user_input is not None:
             try:
-                # The known baud rate first, so the port of the running entry
-                # keeps its line settings.
+                # Known baudrate first. If the user picked the port the running entry
+                # is on, cycling through every baudrate would mess with its line
+                # settings.
                 identity = await self._async_probe(
                     user_input[CONF_PORT], entry.data[CONF_BAUDRATE]
                 )
@@ -187,11 +201,12 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _async_probe(self, port: str, baudrate: int | None = None) -> GMCIdentity:
+        # strip() - a copy-pasted path with a trailing space is not a missing port
         return await self.hass.async_add_executor_job(probe, port.strip(), baudrate)
 
     async def _async_create_entry(self, identity: GMCIdentity) -> ConfigFlowResult:
         await self.async_set_unique_id(identity.serial_number)
-        # A configured counter found on another port: follow it there.
+        # Already configured counter showed up on another port? Follow it there.
         self._abort_if_unique_id_configured(
             updates={CONF_PORT: identity.port, CONF_BAUDRATE: identity.baudrate}
         )
@@ -214,12 +229,14 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
             _list_ports, self._configured_ports(exclude_entry_id)
         )
         if suggested is None and ports:
+            # Pre-select the most likely GMC (sorted first by _list_ports)
             suggested = {CONF_PORT: ports[0]["value"]}
         schema = vol.Schema(
             {
                 vol.Required(CONF_PORT): SelectSelector(
                     SelectSelectorConfig(
                         options=ports,
+                        # Let the user type a path we didn't list
                         custom_value=True,
                         mode=SelectSelectorMode.DROPDOWN,
                     )

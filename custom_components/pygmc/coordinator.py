@@ -24,7 +24,8 @@ from .gmc import (
 type GMCConfigEntry = ConfigEntry[GMCCoordinator]
 type GMCData = dict[str, float | None]
 
-# Failures only the user can fix get a repair issue besides unavailable entities.
+# Failures only the user can fix. These get a repair issue on top of unavailable
+# entities. Unplugged/switched off counters fix themselves... no issue for those.
 REPAIRABLE_ERRORS: Final = (DeviceMismatchError, PortPermissionError)
 
 
@@ -32,7 +33,17 @@ REPAIRABLE_ERRORS: Final = (DeviceMismatchError, PortPermissionError)
 def async_update_issues(
     hass: HomeAssistant, entry: ConfigEntry, err: GMCError | None = None
 ) -> None:
-    """Raise the repair issue for a failure the user must fix; delete the others."""
+    """
+    Raise the repair issue for a failure the user must fix & delete the others.
+
+    Parameters
+    ----------
+    hass: HomeAssistant
+    entry: ConfigEntry
+    err: GMCError | None
+        Latest failure. Default=None means all good, delete every issue.
+
+    """
     for error in REPAIRABLE_ERRORS:
         issue_id = f"{error.translation_key}_{entry.entry_id}"
         if isinstance(err, error):
@@ -71,8 +82,9 @@ class GMCCoordinator(DataUpdateCoordinator[GMCData]):
             update_interval=SCAN_INTERVAL,
         )
         self._device: GMCDevice | None = None
-        # A scheduled refresh can overlap one requested by homeassistant.update_entity,
-        # and unloading can overlap a refresh that is still connecting.
+        # One serial port, one conversation at a time. Two ways to overlap:
+        # a scheduled refresh vs. one requested by homeassistant.update_entity,
+        # and unloading vs. a refresh that is still connecting.
         self._lock = threading.Lock()
 
     @override
@@ -87,9 +99,11 @@ class GMCCoordinator(DataUpdateCoordinator[GMCData]):
                 translation_key=err.translation_key,
                 translation_placeholders=err.translation_placeholders,
             ) from err
+
         async_update_issues(self.hass, entry)
         if self.identity.baudrate != entry.data[CONF_BAUDRATE]:
-            # Try the counter's new baud rate first when reconnecting.
+            # Someone changed the baudrate on the device. Remember it so the next
+            # reconnect tries it first instead of cycling through all of them.
             self.hass.config_entries.async_update_entry(
                 entry, data={**entry.data, CONF_BAUDRATE: self.identity.baudrate}
             )
@@ -113,13 +127,15 @@ class GMCCoordinator(DataUpdateCoordinator[GMCData]):
             try:
                 return self._device.read()
             except GMCError:
-                # Reconnect on the next refresh.
+                # Start fresh - reconnect on the next refresh.
                 self._device.close()
                 self._device = None
                 raise
 
     def _close(self) -> None:
         with self._lock:
-            if self._device is not None:
-                self._device.close()
-                self._device = None
+            if self._device is None:
+                # Never connected or already closed... nothing to do.
+                return
+            self._device.close()
+            self._device = None
