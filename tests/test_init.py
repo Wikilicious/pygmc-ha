@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import timedelta
 import os
-from pathlib import Path
 
 from freezegun.api import FrozenDateTimeFactory
 import pytest
@@ -111,22 +110,16 @@ async def test_permission_issue(
     assert not issue_registry.issues
 
 
-async def test_brltty_issue(
+@pytest.mark.parametrize("counter", [gmc_320(serial_number=OTHER_SERIAL_NUMBER)])
+async def test_issue_removed_with_entry(
     hass: HomeAssistant,
-    bus: FakeBus,
     config_entry: MockConfigEntry,
-    port: str,
     issue_registry: ir.IssueRegistry,
-    udev_rule_dirs: tuple[Path, Path],
 ) -> None:
-    """A port taken by brltty raises a repair issue, removed with the entry."""
-    (udev_rule_dirs[1] / "85-brltty.rules").write_text(
-        'ENV{PRODUCT}=="1a86/7523/*", ENV{BRLTTY_BRAILLE_DRIVER}="bm"\n'
-    )
-    bus.unplug(port)
+    """Repair issues of an entry that never loaded go away with the entry."""
     await setup_integration(hass, config_entry)
     assert config_entry.state is ConfigEntryState.SETUP_RETRY
-    assert issue_registry.async_get_issue(DOMAIN, f"brltty_{config_entry.entry_id}")
+    assert issue_registry.issues
 
     await hass.config_entries.async_remove(config_entry.entry_id)
     await hass.async_block_till_done()
@@ -191,7 +184,6 @@ async def test_unplugged_and_back(
 
 async def test_counter_stops_answering(
     hass: HomeAssistant,
-    bus: FakeBus,
     config_entry: MockConfigEntry,
     counter: FakeGMC,
     freezer: FrozenDateTimeFactory,

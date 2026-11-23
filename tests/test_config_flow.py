@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from collections.abc import Generator
 import os
-from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -160,24 +159,6 @@ async def test_user_flow_permission_denied(
     bus.allow_access(port)
     result = await submit(hass, result, port)
     assert result["type"] is FlowResultType.CREATE_ENTRY
-
-
-async def test_user_flow_brltty(
-    hass: HomeAssistant, bus: FakeBus, udev_rule_dirs: tuple[Path, Path]
-) -> None:
-    """A port taken by brltty is blamed on brltty, unless its rule is overridden."""
-    etc, usr = udev_rule_dirs
-    (usr / "85-brltty.rules").write_text(
-        '# GMC counters\nENV{PRODUCT}=="1a86/7523/*", ENV{BRLTTY_BRAILLE_DRIVER}="bm"\n'
-    )
-    missing = str(bus.directory / "ttyUSB0")
-    result = await submit(hass, await start_user_flow(hass), missing)
-    assert result["errors"] == {"base": "brltty"}
-
-    # A file in /etc replaces the packaged rule file of the same name.
-    (etc / "85-brltty.rules").write_text('#ENV{PRODUCT}=="1a86/7523/*"\n')
-    result = await submit(hass, result, missing)
-    assert result["errors"] == {"base": "port_not_found"}
 
 
 async def test_user_flow_communication_error(hass: HomeAssistant, port: str) -> None:

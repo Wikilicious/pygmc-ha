@@ -74,8 +74,7 @@ ignore = [
     "S101",    # Use of assert
     "SLF001",  # Private member accessed
 ]
-# os.path mirrors pygmc and Home Assistant's usb helpers, which take str paths.
-"custom_components/pygmc/{config_flow,gmc}.py" = ["PTH"]
+# Fake ports are str paths, as pyserial takes them.
 "tests/fake_gmc.py" = ["PTH"]
 
 [tool.ruff.lint.isort]

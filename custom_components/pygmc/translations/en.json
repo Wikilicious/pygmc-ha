@@ -27,7 +27,6 @@
     },
     "error": {
       "port_not_found": "{port} does not exist. Check that the counter is plugged in.",
-      "brltty": "{port} disappeared because the brltty package took over the counter's USB adapter. Remove brltty, or disable its rule for the adapter, then plug the counter in again.",
       "permission_denied": "Home Assistant is not allowed to open {port}. See the troubleshooting section of the documentation.",
       "no_response": "No GMC counter answered on {port}. Check that the counter is switched on and that no other program is using the port.",
       "communication_error": "Communicating with the counter on {port} failed: {error}",
@@ -63,9 +62,6 @@
     "port_not_found": {
       "message": "Serial port {port} does not exist. The counter may be unplugged."
     },
-    "brltty": {
-      "message": "Serial port {port} does not exist because the brltty package took over the counter's USB adapter."
-    },
     "permission_denied": {
       "message": "Home Assistant is not allowed to open serial port {port}."
     },
@@ -86,10 +82,6 @@
     "permission_denied": {
       "title": "Home Assistant cannot open the port of {title}",
       "description": "The {title} counter is configured on {port}, but Home Assistant is not allowed to open it.\n\nThis happens on Home Assistant Core installations when the user running Home Assistant is not in the group owning serial ports, usually `dialout`. Add it, for example with `sudo usermod -aG dialout homeassistant`, then restart Home Assistant.\n\nThis issue clears itself once the counter can be read."
-    },
-    "brltty": {
-      "title": "brltty is blocking {title}",
-      "description": "The brltty package treats the USB serial adapter inside GMC counters as a braille display and takes it over, so {port} disappears moments after the counter is plugged in.\n\nIf you do not use a braille display, remove the package with `sudo apt remove brltty`. Otherwise, comment out the line matching `1a86/7523` in its udev rules, usually `/usr/lib/udev/rules.d/85-brltty.rules`. Then plug the counter in again.\n\nThis issue clears itself once the counter can be read."
     },
     "device_mismatch": {
       "title": "Wrong counter on the port of {title}",

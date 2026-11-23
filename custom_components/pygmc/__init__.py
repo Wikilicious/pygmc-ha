@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .coordinator import GMCConfigEntry, GMCCoordinator, async_delete_issues
+from .coordinator import GMCConfigEntry, GMCCoordinator, async_update_issues
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
 
@@ -21,10 +21,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> bool:
     """Unload a config entry."""
-    async_delete_issues(hass, entry)
+    async_update_issues(hass, entry)
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: GMCConfigEntry) -> None:
     """Delete repair issues of an entry removed while it could not load."""
-    async_delete_issues(hass, entry)
+    async_update_issues(hass, entry)

@@ -30,26 +30,24 @@ def _hex_id(value: int | None) -> str | None:
 def _list_ports(in_use: set[str]) -> list[SelectOptionDict]:
     """List serial ports not used by an entry, likely GMC counters first."""
     in_use_devices = {os.path.realpath(port) for port in in_use}
-    likely: list[SelectOptionDict] = []
-    others: list[SelectOptionDict] = []
-    for port in sorted(list_ports.comports(), key=lambda port: port.device):
+    options: list[SelectOptionDict] = []
+    for port in sorted(
+        list_ports.comports(),
+        key=lambda p: ((p.vid, p.pid) != (GMC_USB_VID, GMC_USB_PID), p.device),
+    ):
         if os.path.realpath(port.device) in in_use_devices:
             continue
         path = usb.get_serial_by_id(port.device)
-        option = SelectOptionDict(
-            value=path,
-            label=usb.human_readable_device_name(
-                path,
-                port.serial_number,
-                port.manufacturer,
-                port.description,
-                _hex_id(port.vid),
-                _hex_id(port.pid),
-            ),
+        label = usb.human_readable_device_name(
+            path,
+            port.serial_number,
+            port.manufacturer,
+            port.description,
+            _hex_id(port.vid),
+            _hex_id(port.pid),
         )
-        is_gmc_chip = (port.vid, port.pid) == (GMC_USB_VID, GMC_USB_PID)
-        (likely if is_gmc_chip else others).append(option)
-    return likely + others
+        options.append(SelectOptionDict(value=path, label=label))
+    return options
 
 
 def _ports_match(port: str, others: set[str]) -> bool:
@@ -100,7 +98,9 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
         port = await self.hass.async_add_executor_job(
             usb.get_serial_by_id, discovery_info.device
         )
-        if await self._async_port_in_use(port):
+        if await self.hass.async_add_executor_job(
+            _ports_match, port, self._configured_ports()
+        ):
             return self.async_abort(reason="already_configured")
         # Only the port is known until the counter is probed. If the user ignores
         # this discovery, later discoveries on the same port are ignored too.
@@ -155,8 +155,8 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
         placeholders: dict[str, str] = {}
         if user_input is not None:
             try:
-                # Trying the known baud rate first leaves the line settings of a
-                # port the running entry has open untouched.
+                # The known baud rate first, so the port of the running entry
+                # keeps its line settings.
                 identity = await self._async_probe(
                     user_input[CONF_PORT], entry.data[CONF_BAUDRATE]
                 )
@@ -206,11 +206,6 @@ class PyGMCConfigFlow(ConfigFlow, domain=DOMAIN):
             for entry in self._async_current_entries(include_ignore=False)
             if entry.entry_id != exclude_entry_id
         }
-
-    async def _async_port_in_use(self, port: str) -> bool:
-        return await self.hass.async_add_executor_job(
-            _ports_match, port, self._configured_ports()
-        )
 
     async def _async_port_schema(
         self, suggested: dict[str, Any] | None, exclude_entry_id: str | None = None

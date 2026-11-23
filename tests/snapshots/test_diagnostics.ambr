@@ -20,16 +20,7 @@
       'firmware': '4.26',
       'model': 'GMC-320',
       'serial_number': '**REDACTED**',
-      'version': 'GMC-320Re 4.26',
-    }),
-    'entry': dict({
-      'data': dict({
-        'baudrate': 115200,
-      }),
-      'title': 'GMC-320',
-      'unique_id': '**REDACTED**',
     }),
     'last_update_success': True,
-    'pygmc_version': '0.14.2',
   })
 # ---

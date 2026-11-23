@@ -16,9 +16,11 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .const import DOMAIN, MANUFACTURER
 from .coordinator import GMCConfigEntry, GMCCoordinator
-from .entity import GMCEntity
 
 if TYPE_CHECKING:
     # Added in Home Assistant 2025.3; annotations are never evaluated at runtime.
@@ -27,22 +29,18 @@ if TYPE_CHECKING:
 # The coordinator does all I/O.
 PARALLEL_UPDATES = 0
 
-UNIT_COUNTS_PER_MINUTE: Final = "CPM"
-UNIT_COUNTS_PER_SECOND: Final = "CPS"
-# Coded with U+03BC, the micro sign Home Assistant recommends over U+00B5.
-UNIT_MICROSIEVERT_PER_HOUR: Final = "μSv/h"
-
 SENSORS: Final = (
     SensorEntityDescription(
         key="cpm",
         translation_key="cpm",
-        native_unit_of_measurement=UNIT_COUNTS_PER_MINUTE,
+        native_unit_of_measurement="CPM",
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SensorEntityDescription(
         key="dose_rate",
         translation_key="dose_rate",
-        native_unit_of_measurement=UNIT_MICROSIEVERT_PER_HOUR,
+        # Coded with U+03BC, the micro sign Home Assistant recommends over U+00B5.
+        native_unit_of_measurement="μSv/h",
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=3,
     ),
@@ -50,7 +48,7 @@ SENSORS: Final = (
         # A one second count sampled once a minute is mostly noise.
         key="cps",
         translation_key="cps",
-        native_unit_of_measurement=UNIT_COUNTS_PER_SECOND,
+        native_unit_of_measurement="CPS",
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=False,
     ),
@@ -89,15 +87,27 @@ async def async_setup_entry(
     )
 
 
-class GMCSensor(GMCEntity, SensorEntity):
+class GMCSensor(CoordinatorEntity[GMCCoordinator], SensorEntity):
     """A reading of a GMC counter."""
+
+    _attr_has_entity_name = True
 
     def __init__(
         self, coordinator: GMCCoordinator, description: SensorEntityDescription
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator, description.key)
+        super().__init__(coordinator)
         self.entity_description = description
+        identity = coordinator.identity
+        self._attr_unique_id = f"{identity.serial_number}_{description.key}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, identity.serial_number)},
+            manufacturer=MANUFACTURER,
+            model=identity.model,
+            name=identity.model,
+            serial_number=identity.serial_number,
+            sw_version=identity.firmware or None,
+        )
 
     @property
     def native_value(self) -> float | None:

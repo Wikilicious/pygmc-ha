@@ -132,8 +132,7 @@ When the counter cannot be read, its sensors become unavailable and the entry sh
 
 | Message | What to do |
 |---|---|
-| Serial port does not exist | Check the cable and that the counter is switched on. On Container and VM installations, pass the port through as described above. |
-| brltty took over the counter's USB adapter | Ubuntu's brltty package mistakes the counter's adapter for a braille display. Remove it with `sudo apt remove brltty`, or comment out its `1a86/7523` rule in `/usr/lib/udev/rules.d/85-brltty.rules`, then plug the counter in again. |
+| Serial port does not exist | Check the cable and that the counter is switched on. On Container and VM installations, pass the port through as described above. If the port vanishes moments after plugging the counter into an Ubuntu host, the brltty package has mistaken its adapter for a braille display: remove it with `sudo apt remove brltty`, or comment out its `1a86/7523` rule in `/usr/lib/udev/rules.d/85-brltty.rules`, then plug the counter in again. |
 | Home Assistant is not allowed to open the port | On Core installations, add the Home Assistant user to the `dialout` group as described above. |
 | The counter does not answer | Check that the counter is on and that no other program is using the port. |
 | A different counter answers | Plug in the right counter, or select **Reconfigure** on the entry and choose the counter's new port. |

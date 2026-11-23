@@ -32,16 +32,6 @@ def entity_registry_enabled_by_default() -> Generator[None]:
         yield
 
 
-@pytest.fixture(autouse=True)
-def udev_rule_dirs(tmp_path: Path) -> Generator[tuple[Path, Path]]:
-    """Point the brltty check at empty udev rule directories, /etc and /usr/lib."""
-    etc, usr = tmp_path / "etc-rules", tmp_path / "usr-rules"
-    etc.mkdir()
-    usr.mkdir()
-    with patch("custom_components.pygmc.gmc._UDEV_RULE_DIRS", (etc, usr)):
-        yield etc, usr
-
-
 @pytest.fixture
 def bus(tmp_path: Path) -> Generator[FakeBus]:
     """Replace pyserial with fake ports that tests plug counters into."""
