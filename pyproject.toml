@@ -28,7 +28,9 @@ package = false
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
-addopts = "--cov=custom_components.pygmc --cov-report=term-missing --cov-fail-under=100"
+# -p syrupy loads syrupy first, so the test harness's snapshot fixture always
+# overrides it. Plugin load order otherwise varies between machines.
+addopts = "-p syrupy --cov=custom_components.pygmc --cov-report=term-missing --cov-fail-under=100"
 
 [tool.coverage.run]
 branch = true
