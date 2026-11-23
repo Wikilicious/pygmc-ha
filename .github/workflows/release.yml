@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  package:
+    name: Attach pygmc.zip
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set the manifest version to the release tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          manifest=custom_components/pygmc/manifest.json
+          jq --arg version "${TAG#v}" '.version = $version' "$manifest" > "$RUNNER_TEMP/manifest.json"
+          mv "$RUNNER_TEMP/manifest.json" "$manifest"
+      - name: Zip the integration
+        working-directory: custom_components/pygmc
+        run: zip -r "$RUNNER_TEMP/pygmc.zip" . -x '__pycache__/*'
+      # HACS installs this asset, see zip_release in hacs.json.
+      - name: Upload the zip to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" "$RUNNER_TEMP/pygmc.zip" --clobber --repo "$GITHUB_REPOSITORY"

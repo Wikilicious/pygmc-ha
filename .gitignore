@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local HA dev instance: keep configuration.yaml, ignore everything HA generates.
+config/*
+!config/configuration.yaml

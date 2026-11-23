@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  # Also bumps the test harness, and with it the Home Assistant release tested.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly

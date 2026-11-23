@@ -1,0 +1,88 @@
+# Development tooling only. Home Assistant installs the integration from
+# custom_components/pygmc; its runtime requirements live in manifest.json.
+[project]
+name = "pygmc-ha"
+version = "0.1.0"
+requires-python = ">=3.14.2"
+
+[dependency-groups]
+dev = [
+    # Pins the matching homeassistant release; bump it to test a newer one.
+    "pytest-homeassistant-custom-component==0.13.375",
+    "pygmc==0.14.2",
+    # Requirements of Home Assistant's usb integration, which the manifest depends
+    # on; the test harness does not install them. Keep in step with
+    # homeassistant/components/usb/manifest.json of the pinned release.
+    "aiousbwatcher==1.1.2",
+    "serialx==1.11.0",
+    "mypy==2.4.1",
+    "pytest-cov==7.1.0",
+    "types-pyserial==3.5.0.20261104",
+    "ruff==0.17.6",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "--cov=custom_components.pygmc --cov-report=term-missing --cov-fail-under=100"
+
+[tool.coverage.run]
+branch = true
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-self", "truthy-iterable"]
+files = ["custom_components/pygmc"]
+mypy_path = "typings"
+
+[[tool.mypy.overrides]]
+# pygmc ships no type information.
+module = ["pygmc", "pygmc.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+# The oldest Home Assistant release supported runs Python 3.13.
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "ASYNC", "B", "BLE", "C4", "D", "E", "F", "FURB", "G", "I", "LOG", "N", "PERF",
+    "PIE", "PL", "PT", "PTH", "RET", "RSE", "RUF", "S", "SIM", "SLF", "T20", "TRY",
+    "UP", "W",
+]
+# Lets blind-except see that broad excepts in the config flow are logged.
+logger-objects = ["custom_components.pygmc.const.LOGGER"]
+ignore = [
+    "D202",    # No blank lines allowed after function docstring
+    "D203",    # 1 blank line required before class docstring
+    "D213",    # Multi-line docstring summary should start at the second line
+    "PLR2004", # Magic value used in comparison
+    "TRY003",  # Avoid specifying long messages outside the exception class
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "D103",    # Missing docstring in public function
+    "PLR0913", # Too many arguments: pytest fixtures
+    "PLR0917", # Too many positional arguments: pytest fixtures
+    "S101",    # Use of assert
+    "SLF001",  # Private member accessed
+]
+# os.path mirrors pygmc and Home Assistant's usb helpers, which take str paths.
+"custom_components/pygmc/{config_flow,gmc}.py" = ["PTH"]
+"tests/fake_gmc.py" = ["PTH"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components", "homeassistant"]
+combine-as-imports = true
+split-on-trailing-comma = false
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"

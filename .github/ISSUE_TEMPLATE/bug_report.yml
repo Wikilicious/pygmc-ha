@@ -1,0 +1,55 @@
+name: Bug report
+description: Something does not work as described in the README.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Check the troubleshooting section of the README first. Unsupported
+        models and protocol problems belong to
+        [pygmc](https://github.com/Wikilicious/pygmc/issues).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Counter model and firmware
+      description: Shown on the device page, for example "GMC-320, firmware 4.26".
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation type
+      options:
+        - Home Assistant OS
+        - Home Assistant Container
+        - Home Assistant Core
+        - Home Assistant Supervised
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >-
+        Settings > Devices & services > PyGMC > ⋮ > Download diagnostics, then
+        drag the file here. The serial number is redacted.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug logs
+      description: >-
+        Enable debug logging on the PyGMC entry, reproduce the problem, then
+        disable it to download the log.
+      render: text

@@ -1,0 +1,35 @@
+# serializer version: 1
+# name: test_diagnostics
+  dict({
+    'calibration': dict({
+      'CalibrationCPM_0': 100,
+      'CalibrationCPM_1': 30000,
+      'CalibrationCPM_2': 60000,
+      'Calibration_uSv_0': 0.6499999761581421,
+      'Calibration_uSv_1': 195.0,
+      'Calibration_uSv_2': 390.0,
+    }),
+    'data': dict({
+      'battery_voltage': 4.2,
+      'cpm': 18,
+      'dose_rate': 0.11699999570846557,
+      'temperature': 21.5,
+    }),
+    'device': dict({
+      'baudrate': 115200,
+      'firmware': '4.26',
+      'model': 'GMC-320',
+      'serial_number': '**REDACTED**',
+      'version': 'GMC-320Re 4.26',
+    }),
+    'entry': dict({
+      'data': dict({
+        'baudrate': 115200,
+      }),
+      'title': 'GMC-320',
+      'unique_id': '**REDACTED**',
+    }),
+    'last_update_success': True,
+    'pygmc_version': '0.14.2',
+  })
+# ---

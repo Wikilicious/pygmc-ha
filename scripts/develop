@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Run a local Home Assistant with this integration loaded. UI at http://localhost:8123
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# Symlink so HA loads the integration straight from the repo.
+mkdir -p config/custom_components
+ln -sfn "$PWD/custom_components/pygmc" config/custom_components/pygmc
+
+exec .venv/bin/hass --config "$PWD/config" --debug

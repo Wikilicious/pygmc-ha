@@ -1,0 +1,60 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint and type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.14"
+      - run: uv sync --group dev --locked
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run mypy
+
+  test:
+    name: Test with the latest Home Assistant
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.14"
+      - run: uv sync --group dev --locked
+      # Coverage must stay at 100%, see pyproject.toml.
+      - run: uv run pytest
+
+  test-minimum:
+    # Keep in step with "homeassistant" in hacs.json.
+    name: Test with Home Assistant 2025.2.0
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.13"
+      - name: Install Home Assistant 2025.2.0 and its test harness
+        run: |
+          # Patch releases with prebuilt wheels for Python 3.13 instead of
+          # building the pinned versions from source.
+          printf 'ciso8601==2.3.3\nlru-dict==1.4.1\n' > "$RUNNER_TEMP/overrides.txt"
+          uv venv
+          uv pip install --override "$RUNNER_TEMP/overrides.txt" \
+            "pytest-homeassistant-custom-component==0.13.210" "pygmc==0.14.2"
+          # The test harness leaves out requirements of the usb integration.
+          uv pip install $(.venv/bin/python -c 'import homeassistant, json, pathlib; print(" ".join(json.loads((pathlib.Path(homeassistant.__file__).parent / "components/usb/manifest.json").read_text())["requirements"]))')
+      # Snapshots are compared against the latest release only: older test
+      # harnesses serialize them differently. They are still produced here, so
+      # the code paths behind them run.
+      - run: .venv/bin/pytest --no-cov --snapshot-update -p no:cacheprovider

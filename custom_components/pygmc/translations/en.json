@@ -1,0 +1,99 @@
+{
+  "config": {
+    "flow_title": "{port}",
+    "step": {
+      "user": {
+        "description": "Select the serial port your GMC counter is plugged into, or type its path.",
+        "data": {
+          "port": "Serial port"
+        },
+        "data_description": {
+          "port": "Prefer a /dev/serial/by-id/ path. Unlike /dev/ttyUSB0, it does not change when devices are plugged in a different order."
+        }
+      },
+      "usb_confirm": {
+        "title": "Possible GMC Geiger counter",
+        "description": "A USB serial adapter of the kind used in GQ GMC Geiger counters was plugged in at {port}. Other hardware uses the same adapter, so Home Assistant only talks to it once you confirm. Check it for a GMC counter?"
+      },
+      "reconfigure": {
+        "description": "Select the serial port the counter is plugged into now.",
+        "data": {
+          "port": "Serial port"
+        },
+        "data_description": {
+          "port": "Prefer a /dev/serial/by-id/ path. Unlike /dev/ttyUSB0, it does not change when devices are plugged in a different order."
+        }
+      }
+    },
+    "error": {
+      "port_not_found": "{port} does not exist. Check that the counter is plugged in.",
+      "brltty": "{port} disappeared because the brltty package took over the counter's USB adapter. Remove brltty, or disable its rule for the adapter, then plug the counter in again.",
+      "permission_denied": "Home Assistant is not allowed to open {port}. See the troubleshooting section of the documentation.",
+      "no_response": "No GMC counter answered on {port}. Check that the counter is switched on and that no other program is using the port.",
+      "communication_error": "Communicating with the counter on {port} failed: {error}",
+      "unsupported_model": "The counter reports version \"{version}\", which pygmc does not support yet.",
+      "unknown": "Unexpected error. Check the logs for details."
+    },
+    "abort": {
+      "already_configured": "This counter is already configured.",
+      "already_in_progress": "Setup of this counter is already in progress.",
+      "not_gmc_device": "No GMC counter answered on {port}, so the adapter belongs to other hardware.",
+      "unsupported_model": "The counter reports version \"{version}\", which pygmc does not support yet.",
+      "reconfigure_successful": "The counter was reconfigured.",
+      "wrong_device": "A different counter answered on that port. Plug in the counter this entry belongs to, or add the other counter as a new device."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cpm": {
+        "name": "Counts per minute"
+      },
+      "dose_rate": {
+        "name": "Dose rate"
+      },
+      "cps": {
+        "name": "Counts per second"
+      },
+      "battery_voltage": {
+        "name": "Battery voltage"
+      }
+    }
+  },
+  "exceptions": {
+    "port_not_found": {
+      "message": "Serial port {port} does not exist. The counter may be unplugged."
+    },
+    "brltty": {
+      "message": "Serial port {port} does not exist because the brltty package took over the counter's USB adapter."
+    },
+    "permission_denied": {
+      "message": "Home Assistant is not allowed to open serial port {port}."
+    },
+    "no_response": {
+      "message": "The counter on {port} does not answer. It may be switched off."
+    },
+    "communication_error": {
+      "message": "Communicating with the counter on {port} failed: {error}"
+    },
+    "unsupported_model": {
+      "message": "The counter on {port} reports version \"{version}\", which pygmc does not support."
+    },
+    "device_mismatch": {
+      "message": "A different counter, with serial number {serial_number}, answers on {port}."
+    }
+  },
+  "issues": {
+    "permission_denied": {
+      "title": "Home Assistant cannot open the port of {title}",
+      "description": "The {title} counter is configured on {port}, but Home Assistant is not allowed to open it.\n\nThis happens on Home Assistant Core installations when the user running Home Assistant is not in the group owning serial ports, usually `dialout`. Add it, for example with `sudo usermod -aG dialout homeassistant`, then restart Home Assistant.\n\nThis issue clears itself once the counter can be read."
+    },
+    "brltty": {
+      "title": "brltty is blocking {title}",
+      "description": "The brltty package treats the USB serial adapter inside GMC counters as a braille display and takes it over, so {port} disappears moments after the counter is plugged in.\n\nIf you do not use a braille display, remove the package with `sudo apt remove brltty`. Otherwise, comment out the line matching `1a86/7523` in its udev rules, usually `/usr/lib/udev/rules.d/85-brltty.rules`. Then plug the counter in again.\n\nThis issue clears itself once the counter can be read."
+    },
+    "device_mismatch": {
+      "title": "Wrong counter on the port of {title}",
+      "description": "The counter answering on {port} has serial number {serial_number}, which is not the counter {title} was set up with.\n\nThis happens when counters are swapped, or when several adapters of the same kind share one /dev/serial/by-id/ path. Plug in the right counter, or use **Reconfigure** on {title} to select its new port. To use the other counter as well, add it as a new device.\n\nThis issue clears itself once the right counter answers."
+    }
+  }
+}

@@ -1,0 +1,98 @@
+# Self-assessment against the Home Assistant integration quality scale:
+# https://developers.home-assistant.io/docs/core/integration-quality-scale/
+# hassfest only enforces this file for core integrations.
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: The integration provides no actions.
+  appropriate-polling:
+    status: done
+    comment: Polled once a minute; CPM is itself a rolling 60 second count.
+  brands: done
+  common-modules: done
+  config-flow-test-coverage: done
+  config-flow: done
+  dependency-transparency: done
+  docs-actions:
+    status: exempt
+    comment: The integration provides no actions.
+  docs-conditions:
+    status: exempt
+    comment: The integration provides no conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: The integration provides no triggers.
+  entity-event-setup:
+    status: exempt
+    comment: Entities subscribe to nothing beyond the coordinator.
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure: done
+  test-before-setup: done
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions:
+    status: exempt
+    comment: The integration provides no actions.
+  config-entry-unloading: done
+  docs-configuration-parameters:
+    status: exempt
+    comment: The integration has no options.
+  docs-installation-parameters: done
+  entity-unavailable: done
+  integration-owner: done
+  log-when-unavailable: done
+  parallel-updates: done
+  reauthentication-flow:
+    status: exempt
+    comment: Counters connect over USB serial without authentication.
+  test-coverage: done
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery-update-info:
+    status: done
+    comment: >-
+      A USB discovery of a configured counter on a new port updates the entry once
+      the user confirms. CH340 adapters have no USB serial number, so the counter
+      is only identified by probing, which needs that confirmation.
+  discovery: done
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices:
+    status: exempt
+    comment: Each config entry is exactly one counter.
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default: done
+  entity-translations: done
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues: done
+  stale-devices:
+    status: exempt
+    comment: Each config entry is exactly one counter, removed with its entry.
+
+  # Platinum
+  async-dependency:
+    status: todo
+    comment: pygmc wraps pyserial's blocking API; all calls run in the executor.
+  inject-websession:
+    status: exempt
+    comment: The integration makes no HTTP requests.
+  strict-typing:
+    status: todo
+    comment: The integration passes mypy --strict, but pygmc ships no type information.

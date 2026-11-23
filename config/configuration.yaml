@@ -1,0 +1,17 @@
+# Minimal config for the local dev instance started by scripts/develop.
+# Leaner than default_config (no bluetooth, zeroconf, go2rtc, ...).
+# HA still loads its voice/camera core stack; on a bare WSL install that logs
+# ffmpeg / pymicro-vad errors. They're harmless here. To silence them:
+#   sudo apt install ffmpeg build-essential libturbojpeg0
+frontend:
+config:
+history:
+logbook:
+system_log:
+usb:
+
+logger:
+  default: info
+  logs:
+    custom_components.pygmc: debug
+    pygmc: debug

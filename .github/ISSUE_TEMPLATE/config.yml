@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: pygmc library issues
+    url: https://github.com/Wikilicious/pygmc/issues
+    about: Unsupported models and serial protocol problems.
